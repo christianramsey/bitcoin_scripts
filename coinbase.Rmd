@@ -1,0 +1,38 @@
+---
+title: "bitcoin price/profit script"
+output: html_notebook
+---
+
+
+```{r}
+
+library(readr)
+coinbase <- read_csv("bitcointransactions20171021.csv", skip = 1)
+
+
+get_lastest_price <- function() {
+  library(RJSONIO)
+  url <- "https://www.bitstamp.net/api/transactions/"
+  bs_data <- fromJSON(url) # returns a list
+  bs_df <- do.call(rbind,lapply(bs_data,data.frame,stringsAsFactors=FALSE))
+  return(head(bs_df, 1)$price)
+}
+
+```
+```{r}
+
+
+
+total_invested <- sum(ifelse(coinbase$Amount < 0, -1, 1) * (coinbase$`Transfer Total`)) 
+total_worth <- as.double(get_lastest_price()) * as.double(tail(coinbase$Balance, 1))
+
+invsted <- c(total_invested,total_worth)
+
+library(tidyverse)
+
+(c(paste("current bitcoin price: ", get_lastest_price()), paste("total invested: ", total_invested), paste("total worth: ", total_worth), paste("profit: ", total_worth - total_invested)))
+
+ggplot(data=invsted, aes(total_invested, total_worth)) + geom_bar()
+
+```
+
